@@ -26,9 +26,26 @@ my $dir_tweets = lib::abs::path('tweets');
 my $useragent = LWP::UserAgent->new(agent => 'YATweetArchiver/0.1');
 
 # Find the most recent tweets.
-my $tweets = $twitter->home_timeline({page => 1 });
-tweet:
-for my $tweet (@$tweets) {
+my $page = 1;
+page:
+while (1) {
+    print "Page $page...\n\n";
+    my $tweets = $twitter->home_timeline({ page => $page++ });
+    last page if ref($tweets) ne 'ARRAY';
+
+    for my $tweet (@$tweets) {
+        store_tweet($tweet);
+    }
+    
+    print "Sleeping for a bit...\n";
+    sleep 2;
+}
+
+print "That's all twitter will give us\n";
+
+sub store_tweet {
+    my ($tweet) = @_;
+    
     # Find the content of the tweet - fetch the original if it was truncated
     # by a retweet.
     my $text = $tweet->text;
@@ -68,15 +85,16 @@ for my $tweet (@$tweets) {
     # Extract any links.
     url:
     for my $url ($text =~ m{ ( http s? ://t.co/ [a-zA-Z0-9]+ ) }gx) {
+        my $url_subdir
+            = ensuresubdir($dir_tweets, 'urls', @date_parts, $tweet->id);
+        next url if -e $url_subdir . '/contents';
+
         print "Fetching $url\n";
         my $response = $useragent->get($url);
         if (!$response->is_success) {
             carp "Couldn't fetch $url:", $response->status;
             next url;
         }
-        my $url_subdir
-            = ensuresubdir($dir_tweets, 'urls', @date_parts, $tweet->id);
-        next url if -e $url_subdir . '/contents';
         store($url_subdir, 'origurl', $url);
         store($url_subdir, 'url', $response->request->uri->as_string);
         store($url_subdir, 'contents', $response->decoded_content);
