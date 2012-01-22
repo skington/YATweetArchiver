@@ -1,0 +1,17 @@
+A simple Perl script to trawl your twitter timeline, saving absolutely
+everything to disc.
+
+You can then use grep or Spotlight to search through it.
+
+You'll need to create a twitter app of your own to use it - go to
+https://dev.twitter.com/ and rummage around. Then create a file called
+oauth that looks something like this:
+
+{
+    consumer_key    => '...',
+    consumer_secret => '...',
+    access_token    => '...',
+    access_token_secret => '...',
+};
+
+with the appropriate values cut and pasted from Twitter.
