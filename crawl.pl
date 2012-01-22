@@ -11,6 +11,9 @@ use English;
 use Net::Twitter;
 use LWP;
 
+# Crude attempt at argument parsing.
+$ARGV[0] ~~ ['-h', '--help'] and die "Syntax: perl crawl.pl [pagenum]\n";
+
 # Get our configuration file, connect to Twitter.
 my $conf = do(lib::abs::path('oauth'))
     or die "Couldn't find oauth config file: $OS_ERROR";
@@ -25,8 +28,9 @@ my $dir_tweets = lib::abs::path('tweets');
 # Get a user agent.
 my $useragent = LWP::UserAgent->new(agent => 'YATweetArchiver/0.1');
 
-# Find the most recent tweets.
-my $page = 1;
+# Find the most recent tweets, optionally starting at a given page if the
+# script recently crashed.
+my $page = $ARGV[0] =~ /^ \d+ $/x ? shift : 1;
 page:
 while (1) {
     print "Page $page...\n\n";
@@ -92,7 +96,10 @@ sub store_tweet {
         print "Fetching $url\n";
         my $response = $useragent->get($url);
         if (!$response->is_success) {
-            carp "Couldn't fetch $url:", $response->status;
+            carp "Couldn't fetch $url:", $response->status_line;
+            if (my $warning = $response->headers->{'client-warning'}) {
+                carp "Warning for $url: $warning";
+            }
             next url;
         }
         store($url_subdir, 'origurl', $url);
