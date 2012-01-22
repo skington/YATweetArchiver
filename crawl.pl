@@ -66,7 +66,7 @@ sub store_tweet {
     my $subdir = ensuresubdir($dir_tweets, @date_parts);
     store($subdir, $tweet->id,
         sprintf(
-            "%s wrote on %s:\n%s",
+            "%s wrote on %s:\n%s\n",
             $tweet->user->screen_name,
             $date->ymd . ' ' . $date->hms(':'),
             $text
