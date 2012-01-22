@@ -37,8 +37,14 @@ while (1) {
     my $tweets = $twitter->home_timeline({ page => $page++ });
     last page if ref($tweets) ne 'ARRAY';
 
+    my $any_new_tweets;
     for my $tweet (@$tweets) {
-        store_tweet($tweet);
+        store_tweet($tweet) and $any_new_tweets++;
+    }
+    
+    if (!$any_new_tweets) {
+        print "Looks like we're done\n";
+        exit;
     }
     
     print "Sleeping for a bit...\n";
@@ -64,6 +70,8 @@ sub store_tweet {
     
     # Store the tweet.
     my $subdir = ensuresubdir($dir_tweets, @date_parts);
+    my $tweet_path      = $subdir . '/' . $tweet->id;
+    return if -e $tweet_path;    
     store($subdir, $tweet->id,
         sprintf(
             "%s wrote on %s:\n%s\n",
@@ -79,7 +87,6 @@ sub store_tweet {
     my $user_subdir
         = ensuresubdir($dir_tweets, 'users', $tweet->user->screen_name,
         @date_parts);
-    my $tweet_path      = $subdir . '/' . $tweet->id;
     my $tweet_path_user = $user_subdir . '/' . $tweet->id;
     if (!-e $tweet_path_user) {
         link($tweet_path, $tweet_path_user)
@@ -107,6 +114,8 @@ sub store_tweet {
         store($url_subdir, 'contents', $response->decoded_content);
     }
     print "\n";
+    
+    return 1;
 }
 
 # Passed a directory path and an optional list of leafnames, ensures that
