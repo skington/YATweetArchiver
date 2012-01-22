@@ -16,3 +16,9 @@ xcuserdata
 # svn & cvs
 .svn
 CVS
+
+# OAuth config file
+oauth
+
+# Stored tweets
+tweets/*
